@@ -1,0 +1,165 @@
+.App {
+  text-align: center;
+  color: #808080;
+}
+
+.mainPage{
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: white;
+  background-image: url("background.png");
+  background-repeat:no-repeat;
+  background-position: center;
+}
+
+.loginForm{
+  -webkit-box-shadow: 2px 2px 10px 2px #808080;
+  box-shadow: 2px 2px 10px 2px #808080;
+  background-color: white;
+  padding: 10px;
+}
+
+.login, .createAccount, .join{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.login>input{
+  margin: 5px;
+  width: 50%;
+  padding: 5px;
+  font-size: 14px;
+}
+
+.join>input{
+  margin: 5px;
+  padding: 5px;
+  font-size: 14px;
+}
+
+.login>input[type=button], .join>input[type=button]{
+  width: 25%;
+  padding: 5px;
+  font-size: 14px;
+  background: none;
+  outline: none;
+  cursor: pointer;
+  color: #808080;
+  border: 1px solid #808080;
+}
+.join>input[type=button]{
+  width: 50%;
+}
+.loginForm>.login>h2{
+  margin: 5px;
+}
+.loginForm>.login>p{
+  margin: 5px;
+  color: #f2b1b2;
+}
+.loginForm>.login>h2>span, .loginForm>.join>h2>span{
+  color: #f2b1b2;
+}
+
+.loginForm>p{
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+}
+.loginForm>a{
+  color: #808080;
+}
+.loginForm>p::before, .loginForm>p::after{
+  content: " ";
+  display: block;
+  width: 30%;
+  border-top: 1px solid #808080;
+}
+.googleLogin{
+  margin-bottom: 10px;
+}
+.userPageWrapper{
+  background-color: white;
+  background-image: url("background.png");
+  min-height: 100vh;
+}
+.userPage{
+  display: flex;
+  flex-direction: column;
+  margin: 0 10% 0 10%;
+  -webkit-box-shadow: 2px 2px 10px 2px #808080;
+  box-shadow: 2px 2px 10px 2px #808080;
+}
+.sideBar{
+  background-color: #bfbfbf;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 15px 0 15px;
+}
+.sideBar>h2{
+  color: white;
+  font-weight: bold;
+  padding: 0;
+}
+.sideBar>button, .addList, .listName>button{
+    background: none;
+    outline: none;
+    border:none;
+    color: white;
+    font-size: 25px;
+    cursor: pointer;
+}
+.shareButtons{
+  display: flex;
+  justify-content: center;
+  padding: 5px;
+}
+.shareButtons>div{
+  margin: 5px;
+  outline: none;
+  cursor: pointer;
+}
+.addList, .listName>button{
+  color: #808080;
+}
+.listName>button{
+  font-size: 14px;
+}
+.listTitle{
+  font-size: 25px;
+}
+.listsBar{
+  background-color: white;
+  min-height: 50vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.listsBar>.listName{
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #bfbfbf;
+}
+
+.listsBar>.listName>a{
+  color: #808080;
+  margin-right: 10px;
+}
+.itemBar{
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  border-bottom: 1px solid #808080;
+}
+.itemBar>input{
+  font-size: 40px;
+  cursor: pointer;
+}
+.itemBar>input:checked + span{
+  text-decoration: line-through;
+}
