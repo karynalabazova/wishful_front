@@ -163,3 +163,10 @@
 .itemBar>input:checked + span{
   text-decoration: line-through;
 }
+.incorrect{
+  display: block;
+  color: red;
+}
+.correct{
+  display: none;
+}

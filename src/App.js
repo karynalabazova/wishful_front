@@ -67,15 +67,16 @@ function makePromiseActions(name,promise){
 }
 let authToken
 
-let login = (nick,password) =>  ( 
-  fetch ('http://localhost:4000/login', {
+let sendToBack = (nick,password,adress) =>  (
+  fetch (`http://localhost:4000/${adress}`, {
     method: 'POST',
     headers: {
       'Accept': 'application/json',
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({username: nick, password: password})
-  })
+  }).then(res => res.json())
+    .then(json =>history.push('/lists'))
 )
 
 class LoginPage extends Component{
@@ -86,7 +87,7 @@ class LoginPage extends Component{
   }
 
   logIn (nick, password) {
-    store.dispatch(makePromiseActions('login',login(nick, password))())
+    store.dispatch(makePromiseActions('login',sendToBack(nick, password,"login"))())
   }
 
   render(){
@@ -101,11 +102,14 @@ class LoginPage extends Component{
               <h2>Welcome to <span>Wishful</span></h2>
               <p>please login to continue</p>
               <input type="text" placeholder="username"
-                onChange ={event => this.setState({nick: event.target.value})}/>
+                onChange ={event =>
+                  this.setState({nick: event.target.value})}/>
               <input type="password" placeholder="password"
-                onChange ={event => this.setState({password: event.target.value})}/>
+                onChange ={event =>
+                  this.setState({password: event.target.value})}/>
               <input type="button" value="GO!"
-                onClick={()=>this.logIn(this.state.nick,this.state.password)}/>
+                onClick={()=>
+                  this.logIn(this.state.nick,this.state.password)}/>
             </form>
             <p> or </p>
             <div className="createAccount">
@@ -125,19 +129,39 @@ class LoginPage extends Component{
 class CreateAccountPage extends Component{
   constructor(props){
     super(props);
-
+    this.join = this.join.bind(this)
+    this.state = {nick: null, password: null, passwordCheck: null,
+      correct: true}
   }
+
+  join (nick, password) {
+    this.state.password === this.state.passwordCheck ?
+      store.dispatch(makePromiseActions('join',
+        sendToBack(nick, password,"join"))()) :
+          this.setState({correct:false})
+  }
+
   render(){
     return(
       <section className="mainPage">
         <div className="loginForm">
             <form className="join">
               <h2> Join <span>Wishful</span></h2>
-              <input type="text" placeholder="username"/>
-              <input type="password" placeholder="password"/>
-              <input type="password" placeholder="* confirm password"/>
+              <input type="text" placeholder="username"
+                onChange ={event =>
+                  this.setState({nick: event.target.value})}/>
+              <input type="password" placeholder="password"
+                className = {this.state.correct ? null : 'incorrect'}
+                onChange ={event =>
+                  this.setState({password: event.target.value})}/>
+              <input type="password" placeholder="* confirm password"
+                className = {this.state.correct ? null : 'incorrect'}
+                onChange ={event =>
+                  this.setState({passwordCheck: event.target.value})}/>
+              <p className={this.state.correct ? 'correct' : 'incorrect'}>
+                passwords don`t match</p>
               <input type="button" value="Create!"
-                onClick={()=>history.push("/lists")}/>
+                onClick={()=>this.join(this.state.nick,this.state.password)}/>
             </form>
         </div>
       </section>
@@ -301,6 +325,7 @@ function AddList (props){
 
 class App extends Component {
   render() {
+    if (!authToken) history.push('/')
     return (
       <div className="App">
         <Router history = {history}>
