@@ -132,11 +132,17 @@
 .listTitle{
   font-size: 25px;
 }
+.listTitleSpan{
+  width: 80%;
+  word-wrap: normal;
+  word-break: normal;
+}
 .listsBar{
   background-color: white;
-  min-height: 50vh;
+  height: 70vh;
   display: flex;
   flex-direction: column;
+  overflow: scroll;
 }
 
 .listsBar>.listName{

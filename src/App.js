@@ -65,7 +65,6 @@ function makePromiseActions(name,promise){
   }
   return actionPromise
 }
-let authToken
 
 let sendToBack = (nick,password,adress) =>  (
   fetch (`http://localhost:4000/${adress}`, {
@@ -76,25 +75,25 @@ let sendToBack = (nick,password,adress) =>  (
     },
     body: JSON.stringify({username: nick, password: password})
   }).then(res => res.json())
-    .then(json =>history.push('/lists'))
+  // .then(json => (authToken = json.token,
+  // authNick = json.nick,
+  // history.push('/lists'))
 )
 
-class LoginPage extends Component{
+class LoginPage extends Component {
   constructor(props){
     super(props);
-    this.logIn = this.logIn.bind(this)
-    this.state = {nick: null, password: null}
+    this.logIn = this.logIn.bind(this);
+    this.state = {nick: null, password: null};
   }
-
-  logIn (nick, password) {
-    store.dispatch(makePromiseActions('login',sendToBack(nick, password,"login"))())
+  async logIn (nick, password) {
+    await store.dispatch(makePromiseActions('login',sendToBack(nick, password,"login"))())
+    history.push('/lists')
   }
-
   render(){
-
     const responseGoogle = (response) => {
       console.log(response);
-    }
+  }
     return(
       <section className="mainPage">
         <div className="loginForm">
@@ -108,8 +107,7 @@ class LoginPage extends Component{
                 onChange ={event =>
                   this.setState({password: event.target.value})}/>
               <input type="button" value="GO!"
-                onClick={()=>
-                  this.logIn(this.state.nick,this.state.password)}/>
+                onClick={()=> this.logIn(this.state.nick,this.state.password)}/>
             </form>
             <p> or </p>
             <div className="createAccount">
@@ -134,11 +132,13 @@ class CreateAccountPage extends Component{
       correct: true}
   }
 
-  join (nick, password) {
-    this.state.password === this.state.passwordCheck ?
-      store.dispatch(makePromiseActions('join',
-        sendToBack(nick, password,"join"))()) :
-          this.setState({correct:false})
+  async join (nick, password) {
+  if  (this.state.password === this.state.passwordCheck){
+    await store.dispatch(makePromiseActions('join',
+      sendToBack(nick, password,"join"))())
+    await store.dispatch(makePromiseActions('login',sendToBack(nick, password,"login"))())
+    history.push('/lists')
+  }else this.setState({correct:false})
   }
 
   render(){
@@ -169,19 +169,74 @@ class CreateAccountPage extends Component{
   }
 }
 
+let getFromBack = (nick) =>  (
+  fetch (`http://localhost:4000/lists/${nick}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': 'Bearer ' + `${store.getState().promises.login.data.token}`
+    }
+    }).then(response => response.json())
+
+)
+
+let deleteFromBack = (nick,itemText) =>  (
+  fetch (`http://localhost:4000/delete/${nick}/${itemText}`, {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + `${store.getState().promises.login.data.token}`
+    }
+    }).then(response => response.json())
+
+)
+
+let createItem  = (nick,title) => (
+  fetch (`http://localhost:4000/lists/${nick}`, {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + `${store.getState().promises.login.data.token}`
+    },
+    body: JSON.stringify({title: title})
+  }).then(res => res.json())
+)
+
+function List (props){
+  return(
+    <article className = "listName">
+      <button onClick = {() => props.deleteFunction(props.itemText)}>
+        <FontAwesomeIcon icon="times"/>
+      </button>
+      <span className="listTitleSpan">{props.itemText}</span>
+      <Link to= {{ pathname: `/list/${props.itemText}`,
+                   state: {listTitle: props.itemText}
+                 }} >
+      <FontAwesomeIcon icon="chevron-right"/></Link>
+    </article>
+  )
+}
+
 class ListsPage extends Component{
   constructor(props){
     super(props);
 
     this.state = {
-      modalIsOpen: false
+      modalIsOpen: false,
+      data:[],
+      isFetching: true,
+      title: ""
     };
 
     this.openModal = this.openModal.bind(this);
     this.closeModal = this.closeModal.bind(this);
+    this.createList = this.createList.bind(this);
+    this.deleteList = this.deleteList.bind(this);
   }
-  componentWillMount(){
+  async componentWillMount(){
     Modal.setAppElement('body')
+    await store.dispatch(makePromiseActions('getLists',getFromBack(
+      this.props.data.login.data.nick))())
+    this.setState({isFetching : false})
   }
 
   openModal() {
@@ -191,13 +246,36 @@ class ListsPage extends Component{
   closeModal() {
     this.setState({modalIsOpen: false});
   }
-
+  async createList(){
+    await store.dispatch(makePromiseActions('createList',createItem(
+      this.props.data.login.data.nick,
+      this.state.title))())
+    this.setState({title: "",isFetching : true})
+    this.closeModal()
+    await store.dispatch(makePromiseActions('getLists',getFromBack(
+      this.props.data.login.data.nick))())
+    this.setState({isFetching : false})
+    window.scrollTo(0, 0)
+  }
+  async deleteList(value){
+    await store.dispatch(makePromiseActions('deleteList', deleteFromBack(
+      this.props.data.login.data.nick,
+      value))())
+    this.setState({isFetching : true})
+    this.closeModal()
+    await store.dispatch(makePromiseActions('getLists',getFromBack(
+      this.props.data.login.data.nick))())
+    this.setState({isFetching : false})
+    window.scrollTo(0, 0)
+  }
   render(){
+    const {isFetching} = this.state;
+    if (isFetching) return <div>...Loading</div>;
     return(
       <div className="userPageWrapper">
         <section className="userPage">
           <div className="sideBar">
-            <h2> Hello, User!</h2>
+            <h2> Hello, {this.props.data.login.data.nick}!</h2>
             <button onClick={this.openModal}>
               <FontAwesomeIcon icon="plus"/>
             </button>
@@ -206,14 +284,17 @@ class ListsPage extends Component{
               onRequestClose={this.closeModal}
               style={customStyles}
               contentLabel="Example Modal">
-              <input type="text" placeholder="Title" className="listTitle"/>
-              <button onClick={this.closeModal} className="addList">
+              <input type="text" placeholder="Title" className="listTitle"
+              onChange ={event =>
+                this.setState({title: event.target.value})}/>
+              <button onClick={this.createList} className="addList">
                 <FontAwesomeIcon icon="plus"/>
               </button>
             </Modal>
           </div>
-          <div className="listsBar">
-            <List className="listName" itemText="List name"></List>
+          <div className="listsBar" >
+            {this.props.data.getLists.data.reverse().map(x =>
+            <List className="listName" deleteFunction ={this.deleteList} value = {x.title} itemText={x.title} key = {Math.random()}></List>)}
           </div>
         </section>
       </div>
@@ -221,12 +302,18 @@ class ListsPage extends Component{
   }
 }
 
+let mapStateToProps = state => ({data: state.promises})
+let ConnectedLists = connect(mapStateToProps)(ListsPage)
+
 class ListItemsPage extends Component{
   constructor(props){
     super(props);
 
     this.state = {
-      modalIsOpen: false
+      modalIsOpen: false,
+      data: [],
+      isFetching: true,
+      title: ""
     };
 
     this.openModal = this.openModal.bind(this);
@@ -234,6 +321,7 @@ class ListItemsPage extends Component{
   }
   componentWillMount(){
     Modal.setAppElement('body')
+    console.log(this.props.location.pathname)
   }
 
   openModal() {
@@ -249,7 +337,7 @@ class ListItemsPage extends Component{
       <div className="userPageWrapper">
         <section className="userPage">
           <div className="sideBar">
-            <h2> List Name </h2>
+            <h2> {this.props.location.state.listTitle} </h2>
             <button onClick={this.openModal}>
               <FontAwesomeIcon icon="plus"/>
             </button>
@@ -258,14 +346,20 @@ class ListItemsPage extends Component{
               onRequestClose={this.closeModal}
               style={customStyles}
               contentLabel="Example Modal">
-              <input type="text" placeholder="text" className="listTitle listItem"/>
+              <input type="text" placeholder="text" className="listTitle listItem"
+              onChange ={event =>
+                this.setState({title: event.target.value})}/>
               <button onClick={this.closeModal} className="addList">
                 <FontAwesomeIcon icon="plus"/>
               </button>
             </Modal>
           </div>
           <div className="listsBar">
-            <Item className="itemBar" itemText="List item"></Item>
+          {this.props.data.getLists.data.map(x =>
+            `/list/${x.title}` === this.props.location.pathname ?
+              x.items.map(x => <Item className="itemBar" itemText={x.text} key = {Math.random()}></Item>) :
+                null
+            )}
           </div>
         </section>
         <ShareButtons/>
@@ -273,6 +367,9 @@ class ListItemsPage extends Component{
     )
   }
 }
+mapStateToProps = state => ({data: state.promises})
+let ConnectedListItems = connect(mapStateToProps)(ListItemsPage)
+
 function ShareButtons (props){
   const shareUrl = window.location.href;
   return(
@@ -293,17 +390,6 @@ function ShareButtons (props){
   )
 }
 
-function List (props){
-  return(
-    <article className = "listName">
-      <button>
-        <FontAwesomeIcon icon="times"/>
-      </button>
-      <span>{props.itemText}</span>
-      <Link to='/list'><FontAwesomeIcon icon="chevron-right"/></Link>
-    </article>
-  )
-}
 
 function Item (props){
   return(
@@ -322,19 +408,20 @@ function AddList (props){
   )
 }
 
-
 class App extends Component {
   render() {
-    if (!authToken) history.push('/')
+    if (!store.getState.login) history.push('/')
     return (
-      <div className="App">
-        <Router history = {history}>
-          <Route path="/" component = { LoginPage } exact />
-          <Route path="/join" component = { CreateAccountPage } />
-          <Route path="/lists" component = { ListsPage } />
-          <Route path="/list" component = { ListItemsPage } />
-        </Router>
-      </div>
+      <Provider store = {store} >
+        <div className="App">
+          <Router history = {history}>
+            <Route path="/" component = { LoginPage } exact />
+            <Route path="/join" component = { CreateAccountPage } />
+            <Route path="/lists" component = { ConnectedLists } />
+            <Route path="/list/:listName" component = { ConnectedListItems } />
+          </Router>
+        </div>
+      </Provider>
     );
   }
 }
