@@ -189,7 +189,7 @@ let deleteFromBack = (nick,itemText) =>  (
 
 )
 
-let createItem  = (nick,title) => (
+let createList  = (nick,title) => (
   fetch (`http://localhost:4000/lists/${nick}`, {
     method: 'POST',
     headers: {
@@ -247,7 +247,7 @@ class ListsPage extends Component{
     this.setState({modalIsOpen: false});
   }
   async createList(){
-    await store.dispatch(makePromiseActions('createList',createItem(
+    await store.dispatch(makePromiseActions('createList',createList(
       this.props.data.login.data.nick,
       this.state.title))())
     this.setState({title: "",isFetching : true})
@@ -305,6 +305,27 @@ class ListsPage extends Component{
 let mapStateToProps = state => ({data: state.promises})
 let ConnectedLists = connect(mapStateToProps)(ListsPage)
 
+let handleItem  = (link,nick,list,title) => (
+  fetch (`http://localhost:4000/${link}/${nick}/${list}`, {
+    method: 'POST',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + `${store.getState().promises.login.data.token}`
+    },
+    body: JSON.stringify({title: title})
+  }).then(response => response.json())
+)
+
+let getItemsFromBack = (nick,list) => (
+  fetch (`http://localhost:4000/lists/${nick}/${list}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': 'Bearer ' + `${store.getState().promises.login.data.token}`
+    }
+  }).then(res => res.json())
+)
+
 class ListItemsPage extends Component{
   constructor(props){
     super(props);
@@ -318,10 +339,16 @@ class ListItemsPage extends Component{
 
     this.openModal = this.openModal.bind(this);
     this.closeModal = this.closeModal.bind(this);
+    this.createItem = this.createItem.bind(this);
+    this.checkItem = this.checkItem.bind(this);
   }
-  componentWillMount(){
+  async componentWillMount(){
     Modal.setAppElement('body')
-    console.log(this.props.location.pathname)
+    await store.dispatch(makePromiseActions('getItems',getItemsFromBack(
+      this.props.data.login.data.nick,
+      this.props.location.state.listTitle))())
+    this.setState({isFetching: false})
+    console.log(this.props.data.getItems.data)
   }
 
   openModal() {
@@ -332,7 +359,37 @@ class ListItemsPage extends Component{
     this.setState({modalIsOpen: false});
   }
 
+  async createItem(){
+    await store.dispatch(makePromiseActions('createItem',handleItem(
+      "lists",
+      this.props.data.login.data.nick,
+      this.props.location.state.listTitle,
+      this.state.title))())
+    this.setState({title: "",isFetching : true})
+    this.closeModal()
+    await store.dispatch(makePromiseActions('getItems',getItemsFromBack(
+      this.props.data.login.data.nick,
+      this.props.location.state.listTitle))())
+    this.setState({isFetching : false})
+    window.scrollTo(0, 0)
+  }
+  async checkItem(value){
+    await store.dispatch(makePromiseActions('createItem',handleItem(
+      "check",
+      this.props.data.login.data.nick,
+      this.props.location.state.listTitle,
+      value))())
+    this.setState({isFetching : true})
+    this.closeModal()
+    await store.dispatch(makePromiseActions('getItems',getItemsFromBack(
+      this.props.data.login.data.nick,
+      this.props.location.state.listTitle))())
+    this.setState({isFetching : false})
+    window.scrollTo(0, 0)
+  }
   render(){
+    const {isFetching} = this.state;
+    if (isFetching) return <div>...Loading</div>;
     return(
       <div className="userPageWrapper">
         <section className="userPage">
@@ -349,17 +406,15 @@ class ListItemsPage extends Component{
               <input type="text" placeholder="text" className="listTitle listItem"
               onChange ={event =>
                 this.setState({title: event.target.value})}/>
-              <button onClick={this.closeModal} className="addList">
+              <button onClick={this.createItem} className="addList">
                 <FontAwesomeIcon icon="plus"/>
               </button>
             </Modal>
           </div>
           <div className="listsBar">
-          {this.props.data.getLists.data.map(x =>
-            `/list/${x.title}` === this.props.location.pathname ?
-              x.items.map(x => <Item className="itemBar" itemText={x.text} key = {Math.random()}></Item>) :
-                null
-            )}
+          {this.props.data.getItems.data.reverse().map(x =>
+            <Item className="itemBar" checkFunction={this.checkItem}
+              checked ={x.checked} itemText={x.text} key = {Math.random()}></Item>)}
           </div>
         </section>
         <ShareButtons/>
@@ -394,7 +449,9 @@ function ShareButtons (props){
 function Item (props){
   return(
     <article className = "itemBar">
-      <input type= "checkbox"/><span>{props.itemText}</span>
+      <input type = "checkbox" checked = {props.checked}
+        onChange={() => props.checkFunction(props.itemText)}/>
+      <span>{props.itemText}</span>
     </article>
   )
 }
