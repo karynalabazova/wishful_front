@@ -2,7 +2,9 @@
   text-align: center;
   color: #808080;
 }
-
+input{
+  outline: none;
+}
 .mainPage{
   min-height: 100vh;
   display: flex;
@@ -123,14 +125,36 @@
   outline: none;
   cursor: pointer;
 }
-.addList, .listName>button{
+.addList, .listName>button, .readersList{
   color: #808080;
+}
+.addReader{
+  font-size: 16px;
+}
+.readersList{
+  padding-top: 15px;
+  color: #f2b1b2;
+}
+.sendlist{
+  display: block;
+  border: 1px solid  #bfbfbf;
+  border-radius: 3px;
+  font-size: 16px;
+  background-color: #bfbfbf;
+  color: white;
+  margin-top: 20px;
 }
 .listName>button{
   font-size: 14px;
 }
 .listTitle{
-  font-size: 25px;
+  font-size: 16px;
+  padding: 3px;
+  border: none;
+  border-bottom: 1px solid  #bfbfbf;
+}
+.share{
+  color: #808080;
 }
 .listTitleSpan{
   width: 80%;
@@ -162,17 +186,45 @@
   padding: 15px;
   border-bottom: 1px solid #808080;
 }
+
 .itemBar>input{
   font-size: 40px;
   cursor: pointer;
 }
-.itemBar>input:checked + span{
-  text-decoration: line-through;
-}
+
 .incorrect{
   display: block;
-  color: red;
+  color: #f2b1b2;
 }
-.correct{
+.buttons{
+  background-color: white;
+}
+.buttons>button{
+  width: 50%;
+  outline: none;
+  border: none;
+  font-size: 16px;
+  padding: 5px;
+  cursor: pointer;
+}
+.activeButton{
+  background-color: white;
+  color: #808080;
+}
+.button{
+  background-color: #e6e6e6;
+  color: white;
+}
+.hide{
   display: none;
+}
+.incorrectInput{
+  font-size: 16px;
+  padding: 3px;
+  border: none;
+  border-bottom: 1px solid  #f2b1b2;
+}
+textarea{
+  outline: none;
+  min-height: 15vh;
 }
